@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// Popover for an analyzed phrase (idiom / phrasal verb / wordplay). Shows the
+/// server-computed explanation instantly — no LLM round-trip.
+struct AnnotationPopover: View {
+    let annotation: HumorAnnotation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(annotation.excerpt)
+                .font(.title3.weight(.bold))
+            Text(annotation.category.replacingOccurrences(of: "_", with: " "))
+                .font(.caption2.weight(.medium))
+                .padding(.horizontal, 7).padding(.vertical, 2)
+                .background(.orange.opacity(0.2), in: .capsule)
+                .foregroundStyle(.orange)
+            Text(annotation.explanation)
+                .font(.callout)
+        }
+        .padding(18)
+        .frame(width: 290, alignment: .leading)
+    }
+}
+
 /// Word/phrase explanation shown as a popover anchored to the tapped word.
 /// Calls `POST /api/explain` and renders the result like the web word popup,
 /// with a "Save to Notebook" action.

@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clip Learner Episode Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c0d;
+      --panel: #151617;
+      --panel-2: #1c1d1f;
+      --panel-3: #24262a;
+      --line: rgba(255, 255, 255, 0.09);
+      --text: #f4f1ea;
+      --muted: #989898;
+      --soft: #c8c2b8;
+      --accent: #f59a3d;
+      --accent-2: #ff3b64;
+      --ok: #68d391;
+      --danger: #ff6b6b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.46);
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(245, 154, 61, 0.14), transparent 34%),
+        radial-gradient(circle at 90% 12%, rgba(255, 59, 100, 0.12), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .shell {
+      width: min(100%, 1120px);
+      margin: 0 auto;
+      padding: 24px;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+
+    .demo-frame {
+      width: min(100%, 430px);
+      min-height: min(940px, calc(100vh - 48px));
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 34px;
+      overflow: hidden;
+      background: #101112;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .episode {
+      min-height: inherit;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #111213 0%, #0d0e0f 100%);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 14px 10px;
+      background: rgba(16, 17, 18, 0.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.07);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .title-block {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .episode-title {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.24;
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .episode-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .video-card {
+      margin: 12px 12px 0;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #242424;
+      aspect-ratio: 16 / 9;
+      position: relative;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+    }
+
+    .poster {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.56) 0%, rgba(0, 0, 0, 0.16) 40%, rgba(0, 0, 0, 0.08) 100%),
+        linear-gradient(135deg, #c2b3a3 0%, #9fa9ad 42%, #32363b 42%, #151719 100%);
+    }
+
+    .poster::before {
+      content: "";
+      position: absolute;
+      right: 24px;
+      bottom: 0;
+      width: 42%;
+      height: 88%;
+      border-radius: 48% 48% 10px 10px;
+      background:
+        radial-gradient(circle at 50% 15%, #d5c5b8 0 11%, transparent 12%),
+        linear-gradient(150deg, transparent 0 25%, #22272b 26% 100%);
+      opacity: 0.86;
+      filter: saturate(0.82);
+    }
+
+    .poster::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      bottom: 22px;
+      width: 38%;
+      height: 18%;
+      border-radius: 14px;
+      background: rgba(80, 54, 34, 0.72);
+      box-shadow: 58px 38px 0 rgba(205, 196, 174, 0.28);
+    }
+
+    .video-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 2;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 36%, #e6ddd6 0 20%, transparent 21%),
+        linear-gradient(#25282b 0 100%);
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      flex: 0 0 auto;
+    }
+
+    .video-title {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .video-title strong,
+    .video-title span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    }
+
+    .video-title strong {
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .video-title span {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .play-big {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      transform: translate(-50%, -50%);
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(12px);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .play-big span {
+      width: 0;
+      height: 0;
+      border-top: 17px solid transparent;
+      border-bottom: 17px solid transparent;
+      border-left: 25px solid white;
+      transform: translateX(3px);
+    }
+
+    .video-bottom {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 12px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-pill {
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: rgba(0, 0, 0, 0.48);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .mini-progress {
+      position: relative;
+      height: 5px;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .mini-progress i {
+      display: block;
+      height: 100%;
+      width: 64%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    }
+
+    .study-controls {
+      padding: 12px 16px 4px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .time-now {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speed {
+      justify-self: end;
+      min-width: 54px;
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--soft);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mode-switch {
+      margin-top: 12px;
+      padding: 4px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .mode-switch button {
+      height: 34px;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .mode-switch button.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .sentence-zone {
+      padding: 16px;
+      flex: 1;
+      min-height: 292px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sentence-strip {
+      flex: 1;
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .context-line {
+      padding: 10px 12px;
+      border-radius: 14px;
+      color: rgba(244, 241, 234, 0.42);
+      font-size: 14px;
+      line-height: 1.38;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .current-card {
+      padding: 18px 16px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.035));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.25);
+    }
+
+    .sentence-text {
+      margin: 0;
+      font-size: clamp(21px, 6vw, 26px);
+      line-height: 1.42;
+      font-weight: 620;
+    }
+
+    .word {
+      display: inline;
+      padding: 0 1px 3px;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 5px;
+    }
+
+    .word.hot {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+      background: rgba(245, 154, 61, 0.09);
+    }
+
+    .hint-line {
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .action {
+      min-width: 0;
+      height: 52px;
+      border-radius: 15px;
+      background: var(--panel-2);
+      border: 1px solid rgba(255, 255, 255, 0.065);
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      color: var(--soft);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .action b {
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 760;
+    }
+
+    .action.primary {
+      background: linear-gradient(180deg, #f6a34b, #e7772e);
+      color: #1c1007;
+      border: 0;
+    }
+
+    .action.saved {
+      color: var(--ok);
+    }
+
+    .sentence-tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .tool {
+      height: 46px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.065);
+      color: var(--soft);
+      font-size: 13px;
+      font-weight: 780;
+    }
+
+    .tool.saved {
+      color: var(--ok);
+      background: rgba(104, 211, 145, 0.12);
+    }
+
+    .transcript-toggle {
+      margin-top: 4px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.055);
+      color: var(--soft);
+      font-size: 13px;
+      font-weight: 740;
+    }
+
+    .transcript {
+      display: none;
+      border-top: 1px solid var(--line);
+      padding: 10px 16px 18px;
+      max-height: 340px;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .transcript.open {
+      display: block;
+    }
+
+    .transcript-line {
+      width: 100%;
+      text-align: left;
+      padding: 12px;
+      border-radius: 13px;
+      background: transparent;
+      color: rgba(244, 241, 234, 0.58);
+      line-height: 1.35;
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 8px;
+    }
+
+    .transcript-line time {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .transcript-line.active {
+      background: rgba(245, 154, 61, 0.11);
+      color: var(--text);
+    }
+
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .sheet-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 10px 16px 20px;
+      border-radius: 26px 26px 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(24, 25, 27, 0.96);
+      backdrop-filter: blur(22px);
+      transform: translateY(110%);
+      transition: transform 220ms ease;
+      box-shadow: 0 -30px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    .sheet.open {
+      transform: translateY(0);
+    }
+
+    .grabber {
+      width: 42px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.23);
+      margin: 0 auto 16px;
+    }
+
+    .lookup-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .lookup-word {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.08;
+      font-weight: 790;
+    }
+
+    .phonetic {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tag {
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(245, 154, 61, 0.13);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .definition {
+      margin: 18px 0 0;
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.48;
+    }
+
+    .example {
+      margin: 14px 0 0;
+      padding: 12px;
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.045);
+      color: var(--soft);
+      font-size: 14px;
+      line-height: 1.44;
+    }
+
+    .sheet-actions {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sheet-actions button {
+      height: 48px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.075);
+      font-weight: 780;
+    }
+
+    .sheet-actions .save-word {
+      background: var(--text);
+      color: #111;
+    }
+
+    .sheet-actions .save-word.saved {
+      background: rgba(104, 211, 145, 0.16);
+      color: var(--ok);
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      z-index: 70;
+      transform: translate(-50%, 22px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(244, 241, 234, 0.92);
+      color: #111;
+      font-size: 13px;
+      font-weight: 760;
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.32);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (min-width: 840px) {
+      .shell {
+        padding: 40px;
+      }
+
+      .demo-frame {
+        width: 430px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        padding: 0;
+        display: block;
+      }
+
+      .demo-frame {
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border: 0;
+      }
+
+      .episode {
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="demo-frame" aria-label="Mobile episode demo">
+      <div class="episode">
+        <header class="topbar">
+          <button class="icon-btn" aria-label="Back">‹</button>
+          <div class="title-block">
+            <h1 class="episode-title">The Science of Learning & Speaking Languages</h1>
+            <div class="episode-meta">Andrew Huberman · Dr. Eddie Chang</div>
+          </div>
+          <button class="icon-btn" aria-label="More">⋯</button>
+        </header>
+
+        <section class="video-card" aria-label="Video preview">
+          <div class="poster"></div>
+          <div class="video-top">
+            <div class="avatar" aria-hidden="true"></div>
+            <div class="video-title">
+              <strong>The Science of Learning & Speaking Languages</strong>
+              <span>Andrew Huberman</span>
+            </div>
+            <button class="icon-btn" aria-label="Captions">CC</button>
+          </div>
+          <button class="play-big" id="videoPlay" aria-label="Play video"><span></span></button>
+          <div class="video-bottom">
+            <div class="time-pill">100:41 / 154:23</div>
+            <div class="mini-progress" aria-hidden="true"><i></i></div>
+          </div>
+        </section>
+
+        <section class="study-controls" aria-label="Study controls">
+          <div class="control-row">
+            <div class="time-now" id="timeNow">100:41 / 154:23</div>
+            <div class="mode-switch" aria-label="Study mode">
+              <button class="active">Listening</button>
+              <button>Shadowing</button>
+            </div>
+            <button class="speed" id="speedBtn">1.0x</button>
+          </div>
+        </section>
+
+        <section class="sentence-zone">
+          <div class="sentence-strip" id="sentenceStrip" aria-live="polite"></div>
+
+          <div class="action-row" aria-label="Sentence actions">
+            <button class="action" id="prevBtn"><b>‹</b><span>Prev</span></button>
+            <button class="action" id="replayBtn"><b>↺</b><span>Replay</span></button>
+            <button class="action primary" id="playBtn"><b>▶</b><span>Play</span></button>
+            <button class="action" id="nextBtn"><b>›</b><span>Next</span></button>
+          </div>
+
+          <div class="sentence-tools" aria-label="Learning actions">
+            <button class="tool" id="explainBtn">Explain sentence</button>
+            <button class="tool" id="saveSentenceBtn">Save sentence</button>
+          </div>
+
+          <button class="transcript-toggle" id="transcriptToggle">Show transcript</button>
+        </section>
+
+        <section class="transcript" id="transcript" aria-label="Transcript"></section>
+      </div>
+
+      <div class="sheet-backdrop" id="backdrop"></div>
+      <aside class="sheet" id="lookupSheet" aria-label="Word lookup">
+        <div class="grabber"></div>
+        <div class="lookup-head">
+          <div>
+            <h2 class="lookup-word" id="lookupWord">replay</h2>
+            <div class="phonetic" id="lookupPhonetic">/riːˈpleɪ/</div>
+          </div>
+          <div class="tag" id="lookupTag">verb</div>
+        </div>
+        <p class="definition" id="lookupDefinition">
+          To play something again, or mentally go over an experience after it happened.
+        </p>
+        <p class="example" id="lookupExample">
+          "I would replay conversations that I'd heard during the day."
+        </p>
+        <div class="sheet-actions">
+          <button id="playSentenceBtn">Play sentence</button>
+          <button class="save-word" id="saveWordBtn">Save word</button>
+        </div>
+      </aside>
+
+      <div class="toast" id="toast">Saved</div>
+    </section>
+  </main>
+
+  <script>
+    const sentences = [
+      {
+        time: "100:35",
+        text: "one thing that i used to do as a child was listen very carefully to adults speak"
+      },
+      {
+        time: "100:41",
+        text: "and i'd close my eyes and i would replay conversations that i'd heard during the day",
+        hot: ["replay", "conversations"]
+      },
+      {
+        time: "100:48",
+        text: "and somehow that helped me understand the rhythm and structure of language"
+      },
+      {
+        time: "100:55",
+        text: "the auditory memory system is remarkably plastic when we pay close attention"
+      }
+    ];
+
+    const lookup = {
+      replay: {
+        word: "replay",
+        phonetic: "/riːˈpleɪ/",
+        tag: "verb",
+        definition: "To play something again, or mentally go over an experience after it happened.",
+        example: "\"I would replay conversations that I'd heard during the day.\""
+      },
+      conversations: {
+        word: "conversations",
+        phonetic: "/ˌkɑːnvərˈseɪʃənz/",
+        tag: "noun",
+        definition: "Informal spoken exchanges between people; back-and-forth talk.",
+        example: "\"Replay conversations\" means remembering the exact flow of what people said."
+      },
+      close: {
+        word: "close",
+        phonetic: "/kloʊz/",
+        tag: "verb",
+        definition: "To shut something, such as your eyes, so it is no longer open.",
+        example: "\"I'd close my eyes\" means he would shut his eyes while listening or remembering."
+      }
+    };
+
+    let index = 1;
+    let playing = false;
+    let savedSentence = false;
+    let savedWords = new Set();
+    let sheetWord = "replay";
+    let speed = 1;
+
+    const sentenceStrip = document.getElementById("sentenceStrip");
+    const transcript = document.getElementById("transcript");
+    const transcriptToggle = document.getElementById("transcriptToggle");
+    const lookupSheet = document.getElementById("lookupSheet");
+    const backdrop = document.getElementById("backdrop");
+    const saveSentenceBtn = document.getElementById("saveSentenceBtn");
+    const saveWordBtn = document.getElementById("saveWordBtn");
+    const playBtn = document.getElementById("playBtn");
+    const videoPlay = document.getElementById("videoPlay");
+    const toast = document.getElementById("toast");
+    const speedBtn = document.getElementById("speedBtn");
+
+    function renderSentence() {
+      const prev = sentences[index - 1];
+      const current = sentences[index];
+      const next = sentences[index + 1];
+      sentenceStrip.innerHTML = `
+        ${prev ? `<button class="context-line" data-jump="${index - 1}">${prev.text}</button>` : ""}
+        <article class="current-card">
+          <p class="sentence-text">${renderWords(current)}</p>
+          <div class="hint-line">
+            <span>${current.time}</span>
+            <span>tap a word · double tap replay</span>
+          </div>
+        </article>
+        ${next ? `<button class="context-line" data-jump="${index + 1}">${next.text}</button>` : ""}
+      `;
+
+      sentenceStrip.querySelectorAll(".word").forEach((el) => {
+        el.addEventListener("click", () => openLookup(el.dataset.word));
+      });
+
+      sentenceStrip.querySelectorAll("[data-jump]").forEach((el) => {
+        el.addEventListener("click", () => {
+          index = Number(el.dataset.jump);
+          savedSentence = false;
+          renderAll();
+          showToast("Jumped to sentence");
+        });
+      });
+
+      sentenceStrip.ondblclick = () => showToast("Replaying current sentence");
+      document.getElementById("timeNow").textContent = `${current.time} / 154:23`;
+    }
+
+    function renderWords(sentence) {
+      const hot = new Set(sentence.hot || []);
+      return sentence.text.split(" ").map((raw) => {
+        const word = raw.replace(/[^a-z']/gi, "").toLowerCase();
+        const active = hot.has(word) ? " hot" : "";
+        return `<button class="word${active}" data-word="${word}">${raw}</button>`;
+      }).join(" ");
+    }
+
+    function renderTranscript() {
+      transcript.innerHTML = sentences.map((sentence, i) => `
+        <button class="transcript-line ${i === index ? "active" : ""}" data-jump="${i}">
+          <time>${sentence.time}</time>
+          <span>${sentence.text}</span>
+        </button>
+      `).join("");
+
+      transcript.querySelectorAll("[data-jump]").forEach((el) => {
+        el.addEventListener("click", () => {
+          index = Number(el.dataset.jump);
+          savedSentence = false;
+          renderAll();
+        });
+      });
+    }
+
+    function renderActions() {
+      saveSentenceBtn.classList.toggle("saved", savedSentence);
+      saveSentenceBtn.textContent = savedSentence ? "Saved sentence" : "Save sentence";
+      playBtn.innerHTML = playing ? "<b>Ⅱ</b><span>Pause</span>" : "<b>▶</b><span>Play</span>";
+    }
+
+    function renderAll() {
+      renderSentence();
+      renderTranscript();
+      renderActions();
+    }
+
+    function openLookup(word) {
+      const entry = lookup[word] || {
+        word,
+        phonetic: "",
+        tag: "word",
+        definition: "A useful word from the current sentence. In the real app this comes from the explanation API.",
+        example: `"${sentences[index].text}"`
+      };
+      sheetWord = word;
+      document.getElementById("lookupWord").textContent = entry.word;
+      document.getElementById("lookupPhonetic").textContent = entry.phonetic;
+      document.getElementById("lookupTag").textContent = entry.tag;
+      document.getElementById("lookupDefinition").textContent = entry.definition;
+      document.getElementById("lookupExample").textContent = entry.example;
+      saveWordBtn.classList.toggle("saved", savedWords.has(word));
+      saveWordBtn.textContent = savedWords.has(word) ? "Saved" : "Save word";
+      lookupSheet.classList.add("open");
+      backdrop.classList.add("open");
+    }
+
+    function closeLookup() {
+      lookupSheet.classList.remove("open");
+      backdrop.classList.remove("open");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1250);
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      index = Math.max(0, index - 1);
+      savedSentence = false;
+      renderAll();
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      index = Math.min(sentences.length - 1, index + 1);
+      savedSentence = false;
+      renderAll();
+    });
+
+    document.getElementById("replayBtn").addEventListener("click", () => showToast("Replaying current sentence"));
+
+    document.getElementById("playBtn").addEventListener("click", () => {
+      playing = !playing;
+      renderActions();
+    });
+
+    videoPlay.addEventListener("click", () => {
+      playing = !playing;
+      renderActions();
+      showToast(playing ? "Playing" : "Paused");
+    });
+
+    document.getElementById("explainBtn").addEventListener("click", () => {
+      openLookup("sentence");
+      document.getElementById("lookupWord").textContent = "Sentence note";
+      document.getElementById("lookupPhonetic").textContent = "";
+      document.getElementById("lookupTag").textContent = "context";
+      document.getElementById("lookupDefinition").textContent =
+        "He is describing a learning habit: replaying heard conversations in memory to internalize rhythm, phrasing, and structure.";
+      document.getElementById("lookupExample").textContent =
+        "Use Replay to hear the sentence again, then save it if it captures a useful pattern.";
+      saveWordBtn.textContent = "Save note";
+    });
+
+    saveSentenceBtn.addEventListener("click", () => {
+      savedSentence = true;
+      renderActions();
+      showToast("Sentence saved");
+    });
+
+    document.getElementById("playSentenceBtn").addEventListener("click", () => showToast("Playing source sentence"));
+
+    saveWordBtn.addEventListener("click", () => {
+      savedWords.add(sheetWord);
+      saveWordBtn.classList.add("saved");
+      saveWordBtn.textContent = sheetWord === "sentence" ? "Saved" : "Saved";
+      showToast(sheetWord === "sentence" ? "Note saved" : "Word saved");
+    });
+
+    backdrop.addEventListener("click", closeLookup);
+
+    transcriptToggle.addEventListener("click", () => {
+      transcript.classList.toggle("open");
+      transcriptToggle.textContent = transcript.classList.contains("open") ? "Hide transcript" : "Show transcript";
+    });
+
+    speedBtn.addEventListener("click", () => {
+      const values = [0.75, 1, 1.25];
+      speed = values[(values.indexOf(speed) + 1) % values.length];
+      speedBtn.textContent = `${speed.toFixed(speed === 1 ? 1 : 2)}x`;
+    });
+
+    let touchStartX = 0;
+    sentenceStrip.addEventListener("touchstart", (event) => {
+      touchStartX = event.changedTouches[0].screenX;
+    }, { passive: true });
+
+    sentenceStrip.addEventListener("touchend", (event) => {
+      const delta = event.changedTouches[0].screenX - touchStartX;
+      if (Math.abs(delta) < 54) return;
+      if (delta < 0) index = Math.min(sentences.length - 1, index + 1);
+      if (delta > 0) index = Math.max(0, index - 1);
+      savedSentence = false;
+      renderAll();
+    }, { passive: true });
+
+    renderAll();
+  </script>
+</body>
+</html>

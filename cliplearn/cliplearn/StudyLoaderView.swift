@@ -12,7 +12,7 @@ struct StudyLoaderView: View {
 
     enum Phase {
         case loading
-        case loaded([Segment])
+        case loaded([Segment], [HumorAnnotation])
         case failed(String)
     }
 
@@ -22,10 +22,11 @@ struct StudyLoaderView: View {
             case .loading:
                 ProgressView("Loading transcript…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .loaded(let segments):
+            case .loaded(let segments, let annotations):
                 StudyView(title: episode.title,
                           videoID: episode.video_id ?? "",
                           segments: segments,
+                          annotations: annotations,
                           api: api,
                           auth: auth)
             case .failed(let message):
@@ -49,7 +50,7 @@ struct StudyLoaderView: View {
         phase = .loading
         do {
             let detail = try await api.episodeDetail(id: episode.id)
-            phase = .loaded(detail.segments)
+            phase = .loaded(detail.segments, detail.annotations)
         } catch {
             phase = .failed((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }

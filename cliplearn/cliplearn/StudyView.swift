@@ -7,6 +7,7 @@ import YouTubePlayerKit
 struct StudyView: View {
     let title: String
     let segments: [Segment]
+    let annotations: [HumorAnnotation]
     let api: APIClient
     let auth: AuthStore
 
@@ -32,9 +33,11 @@ struct StudyView: View {
         let index: Int
     }
 
-    init(title: String, videoID: String, segments: [Segment], api: APIClient, auth: AuthStore) {
+    init(title: String, videoID: String, segments: [Segment],
+         annotations: [HumorAnnotation] = [], api: APIClient, auth: AuthStore) {
         self.title = title
         self.segments = segments
+        self.annotations = annotations
         self.api = api
         self.auth = auth
         // Strip the YouTube embed chrome we *can* remove: bottom control bar,
@@ -68,12 +71,15 @@ struct StudyView: View {
                 .clipShape(.rect(cornerRadius: 16))
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
-            if captionsOn {
+            // Captions show when enabled, OR whenever paused — so a listener who
+            // keeps them off still gets the line revealed the moment they pause.
+            if captionsOn || !isPlaying {
                 caption
             } else {
                 Spacer(minLength: 0)
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: isPlaying)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { transportBar }
@@ -103,47 +109,31 @@ struct StudyView: View {
 
     // MARK: Caption (follows the video)
 
-    /// Immersive caption: the current line is shown as tappable words. The word
-    /// being spoken is full white; the rest are dimmed (alpha 0.7). Long lines
-    /// scroll, and the view auto-scrolls to keep the active word centered.
+    /// Immersive caption: the current line as tappable units. Analyzed phrases
+    /// (idioms / phrasal verbs / wordplay) are grouped into one orange,
+    /// underlined unit; everything else is per word. The unit being spoken is
+    /// full white, the rest dimmed (0.7). Long lines scroll to keep it visible.
     private var caption: some View {
         let active = currentIndex ?? 0
         let segment = segments[safe: active]
-        let tokens = segment.map(\.text).map(tokenize) ?? []
-        let activeWord = segment.flatMap { activeWordIndex(in: $0, tokenCount: tokens.count) }
+        let units = segment.map(captionUnits(for:)) ?? []
+        let activeUnit = segment.flatMap { activeUnitIndex(in: $0, units: units) }
         return GeometryReader { geo in
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     if let segment {
                         FlowLayout(spacing: 6, lineSpacing: 12) {
-                            ForEach(Array(tokens.enumerated()), id: \.offset) { index, token in
-                                Text(token.display)
-                                    .font(.system(size: 25, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(index == activeWord ? 1 : 0.7))
-                                    .animation(.easeInOut(duration: 0.15), value: activeWord)
-                                    .padding(.vertical, 1)
-                                    .contentShape(.rect)
-                                    .id("w\(index)")
-                                    .onTapGesture { lookUp(word: token.lookup, line: segment.text, index: index) }
-                                    .popover(isPresented: popoverBinding(for: index), arrowEdge: .bottom) {
-                                        WordLookupSheet(word: lookup?.word ?? token.lookup,
-                                                        currentLine: segment.text,
-                                                        episodeTitle: title,
-                                                        episodeID: segment.episode_id,
-                                                        sourceTime: segment.start_time,
-                                                        api: api)
-                                            .presentationCompactAdaptation(.popover)
-                                    }
+                            ForEach(Array(units.enumerated()), id: \.offset) { index, unit in
+                                unitView(unit, index: index, isActive: index == activeUnit, segment: segment)
                             }
                         }
                         .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .center)
                         .padding(.horizontal, 24)
                     }
                 }
-                // Auto-scroll within a long line to keep the active word visible.
-                .onChange(of: activeWord) { _, w in
-                    guard let w else { return }
-                    withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo("w\(w)", anchor: .center) }
+                .onChange(of: activeUnit) { _, u in
+                    guard let u else { return }
+                    withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo("w\(u)", anchor: .center) }
                 }
             }
         }
@@ -154,14 +144,103 @@ struct StudyView: View {
         .animation(.easeInOut(duration: 0.2), value: active)
     }
 
-    /// Approximate the word being spoken inside `segment` by distributing the
-    /// line's [start, end] window across the words, weighted by length. (The
-    /// backend only stores per-line timestamps, not per-word.)
-    private func activeWordIndex(in segment: Segment, tokenCount: Int) -> Int? {
+    @ViewBuilder
+    private func unitView(_ unit: CaptionUnit, index: Int, isActive: Bool, segment: Segment) -> some View {
+        let isPhrase = unit.annotation != nil
+        Text(unit.display)
+            .font(.system(size: 25, weight: .semibold))
+            .foregroundStyle(isPhrase ? Color.orange.opacity(isActive ? 1 : 0.85)
+                                      : Color.white.opacity(isActive ? 1 : 0.7))
+            .underline(isPhrase, color: .orange)
+            .animation(.easeInOut(duration: 0.15), value: isActive)
+            .padding(.vertical, 1)
+            .contentShape(.rect)
+            .id("w\(index)")
+            .onTapGesture { lookUp(word: unit.lookup, line: segment.text, index: index) }
+            .popover(isPresented: popoverBinding(for: index), arrowEdge: .bottom) {
+                Group {
+                    if let annotation = unit.annotation {
+                        AnnotationPopover(annotation: annotation)
+                    } else {
+                        WordLookupSheet(word: lookup?.word ?? unit.lookup,
+                                        currentLine: segment.text,
+                                        episodeTitle: title,
+                                        episodeID: segment.episode_id,
+                                        sourceTime: segment.start_time,
+                                        api: api)
+                    }
+                }
+                .presentationCompactAdaptation(.popover)
+            }
+    }
+
+    /// Build display units: analyzed-phrase spans (located by their stored
+    /// `excerpt` text) become one unit; the rest are individual words.
+    private func captionUnits(for segment: Segment) -> [CaptionUnit] {
+        let text = segment.text
+        let segAnnotations = annotations.filter { $0.segment_id == segment.id && !$0.excerpt.isEmpty }
+        var ranges: [(Range<String.Index>, HumorAnnotation)] = []
+        for ann in segAnnotations {
+            if let r = phraseRange(of: ann.excerpt, in: text) { ranges.append((r, ann)) }
+        }
+        ranges.sort { $0.0.lowerBound < $1.0.lowerBound }
+        var phrases: [(Range<String.Index>, HumorAnnotation)] = []
+        for r in ranges where phrases.last.map({ r.0.lowerBound >= $0.0.upperBound }) ?? true {
+            phrases.append(r)
+        }
+
+        func words(_ sub: Substring) -> [CaptionUnit] {
+            sub.split(separator: " ", omittingEmptySubsequences: true).map {
+                let d = String($0)
+                return CaptionUnit(display: d,
+                                   lookup: d.trimmingCharacters(in: CharacterSet.alphanumerics.inverted),
+                                   annotation: nil)
+            }
+        }
+
+        var units: [CaptionUnit] = []
+        var cursor = text.startIndex
+        for (range, ann) in phrases {
+            if cursor < range.lowerBound { units += words(text[cursor..<range.lowerBound]) }
+            let phrase = String(text[range])
+            units.append(CaptionUnit(display: phrase,
+                                     lookup: phrase.trimmingCharacters(in: CharacterSet.alphanumerics.inverted),
+                                     annotation: ann))
+            cursor = range.upperBound
+        }
+        if cursor < text.endIndex { units += words(text[cursor..<text.endIndex]) }
+        return units
+    }
+
+    /// Locate a phrase in the line, tolerating curly-vs-straight quotes, case,
+    /// and stray leading/trailing punctuation. Returns a range valid on `text`.
+    private func phraseRange(of excerpt: String, in text: String) -> Range<String.Index>? {
+        func norm(_ s: String) -> String {
+            s.replacingOccurrences(of: "\u{2019}", with: "'")
+             .replacingOccurrences(of: "\u{2018}", with: "'")
+             .replacingOccurrences(of: "\u{201C}", with: "\"")
+             .replacingOccurrences(of: "\u{201D}", with: "\"")
+        }
+        let normText = norm(text) // 1:1 char substitutions ⇒ offsets match `text`
+        let punctuation = CharacterSet(charactersIn: " .,!?;:\"'")
+        let candidates = [norm(excerpt),
+                          norm(excerpt).trimmingCharacters(in: punctuation)]
+        for candidate in candidates where !candidate.isEmpty {
+            guard let r = normText.range(of: candidate, options: .caseInsensitive) else { continue }
+            let lo = normText.distance(from: normText.startIndex, to: r.lowerBound)
+            let hi = normText.distance(from: normText.startIndex, to: r.upperBound)
+            return text.index(text.startIndex, offsetBy: lo)..<text.index(text.startIndex, offsetBy: hi)
+        }
+        return nil
+    }
+
+    /// Approximate the unit being spoken by distributing the line's [start, end]
+    /// window across units, weighted by length. (Backend has per-line timestamps only.)
+    private func activeUnitIndex(in segment: Segment, units: [CaptionUnit]) -> Int? {
         let duration = segment.end_time - segment.start_time
-        guard duration > 0, tokenCount > 0, isPlaying || currentSeconds > segment.start_time else { return nil }
+        guard duration > 0, !units.isEmpty, isPlaying || currentSeconds > segment.start_time else { return nil }
         let fraction = min(max((currentSeconds - segment.start_time) / duration, 0), 1)
-        let weights = tokenize(segment.text).map { Double(max($0.display.count, 1)) }
+        let weights = units.map { Double(max($0.display.count, 1)) }
         let total = weights.reduce(0, +)
         guard total > 0 else { return nil }
         var cumulative = 0.0
@@ -169,15 +248,7 @@ struct StudyView: View {
             cumulative += w
             if fraction <= cumulative / total { return i }
         }
-        return tokenCount - 1
-    }
-
-    private func tokenize(_ text: String) -> [(display: String, lookup: String)] {
-        text.split(separator: " ", omittingEmptySubsequences: true).map { piece in
-            let display = String(piece)
-            let lookup = display.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-            return (display, lookup)
-        }
+        return units.count - 1
     }
 
     private func lookUp(word: String, line: String, index: Int) {
@@ -317,6 +388,14 @@ struct StudyView: View {
         }
     }
 
+}
+
+/// A unit shown in the caption: a single word, or an analyzed multi-word phrase
+/// (when `annotation` is set — rendered orange + underlined).
+private struct CaptionUnit {
+    let display: String
+    let lookup: String
+    let annotation: HumorAnnotation?
 }
 
 /// "12:34" / "1:02:03" time label.
