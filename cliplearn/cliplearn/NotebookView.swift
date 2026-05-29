@@ -76,7 +76,7 @@ struct NotebookView: View {
                         ForEach(filteredEntries) { entry in
                             NotebookRow(entry: entry)
                                 .listRowBackground(Color.clear)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task { await delete(entry) }
                                     } label: { Label("Delete", systemImage: "trash") }

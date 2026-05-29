@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var loadState: LoadState = .loading
     @State private var selectedCategory: String?   // nil = All
     @State private var showAdd = false
+    @State private var pendingDelete: Episode?
 
     /// Episodes still being processed on the server (drives status polling).
     private var processingCount: Int {
@@ -106,15 +107,19 @@ struct HomeView: View {
                 if !presentCategories.isEmpty { categoryChips }
                 List {
                     ForEach(filteredEpisodes) { episode in
-                        NavigationLink(value: episode) {
-                            EpisodeCard(episode: episode)
+                        Group {
+                            // Only ready episodes open the study view — tapping one
+                            // that's still processing would land on an empty screen.
+                            if episode.isReady {
+                                NavigationLink(value: episode) { EpisodeCard(episode: episode) }
+                            } else {
+                                EpisodeCard(episode: episode)
+                            }
                         }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task { await delete(episode) }
-                            } label: {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) { pendingDelete = episode } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
@@ -136,9 +141,12 @@ struct HomeView: View {
                                     Button("Remove from category") { setCategory(episode, nil) }
                                 }
                             }
-                            Button(role: .destructive) {
-                                Task { await delete(episode) }
-                            } label: {
+                            if episode.status == "error" {
+                                Button {
+                                    retry(episode)
+                                } label: { Label("Retry", systemImage: "arrow.clockwise") }
+                            }
+                            Button(role: .destructive) { pendingDelete = episode } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
@@ -147,6 +155,17 @@ struct HomeView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .refreshable { await load() }
+                .confirmationDialog(
+                    "Delete this clip?",
+                    isPresented: Binding(get: { pendingDelete != nil },
+                                         set: { if !$0 { pendingDelete = nil } }),
+                    presenting: pendingDelete
+                ) { episode in
+                    Button("Delete", role: .destructive) { Task { await delete(episode) } }
+                    Button("Cancel", role: .cancel) {}
+                } message: { episode in
+                    Text(episode.title)
+                }
             }
         }
     }
@@ -184,6 +203,14 @@ struct HomeView: View {
             try await auth.api.deleteEpisode(id: episode.id)
         } catch {
             withAnimation { episodes = backup } // restore on failure
+        }
+    }
+
+    /// Re-run the server pipeline for a failed episode.
+    private func retry(_ episode: Episode) {
+        Task {
+            try? await auth.api.addEpisode(url: episode.url)
+            await load()
         }
     }
 

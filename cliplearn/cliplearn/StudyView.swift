@@ -128,7 +128,10 @@ struct StudyView: View {
                                     .popover(isPresented: popoverBinding(for: index), arrowEdge: .bottom) {
                                         WordLookupSheet(word: lookup?.word ?? token.lookup,
                                                         currentLine: segment.text,
-                                                        episodeTitle: title, api: api)
+                                                        episodeTitle: title,
+                                                        episodeID: segment.episode_id,
+                                                        sourceTime: segment.start_time,
+                                                        api: api)
                                             .presentationCompactAdaptation(.popover)
                                     }
                             }

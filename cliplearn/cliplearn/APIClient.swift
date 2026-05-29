@@ -5,8 +5,11 @@ import Foundation
 enum APIConfig {
     /// iOS Simulator shares the Mac's network, so localhost reaches `npm run dev`.
     static let localDev = URL(string: "http://localhost:5174")!
-    /// The hosted VPS. NOTE: currently plain HTTP — needs HTTPS for the secure
-    /// session cookie to persist (see APIClient notes).
+    /// The hosted VPS. Plain HTTP for now — the backend sets the session cookie
+    /// `secure:false` so it DOES persist over HTTP (login is verified working).
+    /// The remaining concern is cleartext transport: move to HTTPS (domain +
+    /// Let's Encrypt), then revert the cookie to `secure:!dev` and drop the ATS
+    /// exceptions in Info.plist.
     static let production = URL(string: "http://43.134.87.27")!
 
     static let baseURL = production
@@ -120,6 +123,23 @@ final class APIClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["id": id])
         _ = try await send(request)
+    }
+
+    /// Save a single looked-up word/phrase with its explanation. Throws
+    /// `APIError.server(409, …)` if already saved (caller treats as success).
+    func saveWord(word: String, definition: String?, example: String?, phonetic: String?,
+                  sourceText: String, episodeID: String, sourceTime: Double, category: String?) async throws {
+        let body: [String: Any] = [
+            "word": word,
+            "definition": definition ?? "",
+            "example": example ?? "",
+            "phonetic": phonetic ?? "",
+            "source_text": sourceText,
+            "episode_id": episodeID,
+            "source_time": sourceTime,
+            "category": (category?.isEmpty == false) ? category! : "general"
+        ]
+        _ = try await post("/api/notebook", body: body)
     }
 
     /// Save a whole transcript line as a note. Throws `APIError.server(409, …)`
