@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E4EE6A8D2FC946BE00B8C448 /* YouTubePlayerKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4EE6A8C2FC946BE00B8C448 /* YouTubePlayerKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E4EE6A642FC931DE00B8C448 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4EE6A8D2FC946BE00B8C448 /* YouTubePlayerKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 				E4EE6A582FC931DC00B8C448 /* cliplearn */,
 				E4EE6A662FC931DE00B8C448 /* cliplearnTests */,
 				E4EE6A702FC931DE00B8C448 /* cliplearnUITests */,
+				E4EE6A8B2FC946B800B8C448 /* Frameworks */,
 				E4EE6A572FC931DC00B8C448 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +96,13 @@
 				E4EE6A6D2FC931DE00B8C448 /* cliplearnUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E4EE6A8B2FC946B800B8C448 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +125,7 @@
 			);
 			name = cliplearn;
 			packageProductDependencies = (
+				E4EE6A8C2FC946BE00B8C448 /* YouTubePlayerKit */,
 			);
 			productName = cliplearn;
 			productReference = E4EE6A562FC931DC00B8C448 /* cliplearn.app */;
@@ -195,6 +209,9 @@
 			);
 			mainGroup = E4EE6A4D2FC931DC00B8C448;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E4EE6A8A2FC93FD300B8C448 /* XCLocalSwiftPackageReference "../YouTubePlayerKit-main" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E4EE6A572FC931DC00B8C448 /* Products */;
 			projectDirPath = "";
@@ -395,13 +412,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LC36BV3DJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -426,13 +446,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LC36BV3DJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -570,6 +593,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E4EE6A8A2FC93FD300B8C448 /* XCLocalSwiftPackageReference "../YouTubePlayerKit-main" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../YouTubePlayerKit-main";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E4EE6A8C2FC946BE00B8C448 /* YouTubePlayerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4EE6A8A2FC93FD300B8C448 /* XCLocalSwiftPackageReference "../YouTubePlayerKit-main" */;
+			productName = YouTubePlayerKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E4EE6A4E2FC931DC00B8C448 /* Project object */;
 }

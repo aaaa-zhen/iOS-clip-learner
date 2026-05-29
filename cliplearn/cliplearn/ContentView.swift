@@ -8,14 +8,16 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var auth = AuthStore()
+
     var body: some View {
-        NavigationStack {
-            StudyView(
-                title: SampleEpisode.title,
-                videoID: SampleEpisode.videoID,
-                segments: SampleEpisode.segments
-            )
-        }
+        RootView(auth: auth)
+            .task { await auth.bootstrap() }
+            .sheet(isPresented: $auth.showLogin) {
+                AuthView(auth: auth)
+                    .presentationDetents([.height(460)])
+                    .presentationDragIndicator(.visible)
+            }
     }
 }
 
